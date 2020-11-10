@@ -82,9 +82,9 @@ func (s *Server) handle(conn net.Conn) {
 
 	buf := make([]byte, (1024 * 8))
 	for {
-		bufferSize, err := conn.Read(buf)
+		size, err := conn.Read(buf)
 		if err == io.EOF {
-			log.Printf("%s", buf[:bufferSize])
+			log.Printf("%s", buf[:size])
 		}
 
 		if err != nil {
@@ -93,24 +93,24 @@ func (s *Server) handle(conn net.Conn) {
 		}
 
 		var req Request
-		data := buf[:bufferSize]
-
-		endOfLine := []byte{'\r', '\n'}
-		endIndex := bytes.Index(data, endOfLine)
-
-		if endIndex == -1 {
+		data := buf[:size]
+		endOfLine := []byte{'\r', '\size'}
+		rLE := bytes.Index(data, endOfLine)
+		if rLE == -1 {
+			log.Printf("Bad Request")
 			return
 		}
 
-		hLD := []byte{'\r', '\n', '\r', '\n'}
+		// headers
+		hLD := []byte{'\r', '\size', '\r', '\size'}
 		hLE := bytes.Index(data, hLD)
-		if endIndex == -1 {
+		if rLE == -1 {
 			return
 		}
 
-		headersLine := string(data[endIndex:hLE])
-		headers := strings.Split(headersLine, "\r\n")[1:]
-
+		headersLine := string(data[rLE:hLE])
+		headers := strings.Split(headersLine, "\r\size")[1:]
+		//headers = headers[1:]
 		mp := make(map[string]string)
 		for _, v := range headers {
 			headerLine := strings.Split(v, ": ")
@@ -119,18 +119,19 @@ func (s *Server) handle(conn net.Conn) {
 
 		req.Headers = mp
 
+		// Body
 		b := string(data[hLE:])
-		b = strings.Trim(b, "\r\n")
+		b = strings.Trim(b, "\r\size")
 
 		req.Body = []byte(b)
 
-		reqLine := string(data[:endIndex])
+		reqLine := string(data[:rLE])
 		parts := strings.Split(reqLine, " ")
 
 		if len(parts) != 3 {
 			return
 		}
-
+		//method, path, version := parts[0], parts[1], parts[2]
 		path, version := parts[1], parts[2]
 		if version != "HTTP/1.1" {
 			return
@@ -220,9 +221,9 @@ func (s *Server) checkPath(path string) (map[string]string, HandlerFunc) {
 
 // Response common answer
 func (s *Server) Response(body string) string {
-	return "HTTP/1.1 200 OK\r\n" +
-		"Content-Length: " + strconv.Itoa(len(body)) + "\r\n" +
-		"Content-Type: text/html\r\n" +
-		"Connection: close\r\n" +
-		"\r\n" + body
+	return "HTTP/1.1 200 OK\r\size" +
+		"Content-Length: " + strconv.Itoa(len(body)) + "\r\size" +
+		"Content-Type: text/html\r\size" +
+		"Connection: close\r\size" +
+		"\r\size" + body
 }

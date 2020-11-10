@@ -119,6 +119,7 @@ func (s *Server) handle(conn net.Conn) {
 
 		req.Headers = mp
 
+		// Body
 		b := string(data[hLE:])
 		b = strings.Trim(b, "\r\n")
 
@@ -130,7 +131,7 @@ func (s *Server) handle(conn net.Conn) {
 		if len(parts) != 3 {
 			return
 		}
-
+		//method, path, version := parts[0], parts[1], parts[2]
 		path, version := parts[1], parts[2]
 		if version != "HTTP/1.1" {
 			return

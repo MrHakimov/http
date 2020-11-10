@@ -82,35 +82,34 @@ func (s *Server) handle(conn net.Conn) {
 
 	buf := make([]byte, (1024 * 8))
 	for {
-		bufferSize, err := conn.Read(buf)
+		n, err := conn.Read(buf)
 		if err == io.EOF {
-			log.Printf("%s", buf[:bufferSize])
+			log.Printf("%s", buf[:n])
 		}
-
 		if err != nil {
 			log.Println(err)
 			return
 		}
 
 		var req Request
-		data := buf[:bufferSize]
-
-		endOfLine := []byte{'\r', '\n'}
-		endIndex := bytes.Index(data, endOfLine)
-
-		if endIndex == -1 {
+		data := buf[:n]
+		rLD := []byte{'\r', '\n'}
+		rLE := bytes.Index(data, rLD)
+		if rLE == -1 {
+			log.Printf("Bad Request")
 			return
 		}
 
+		// headers
 		hLD := []byte{'\r', '\n', '\r', '\n'}
 		hLE := bytes.Index(data, hLD)
-		if endIndex == -1 {
+		if rLE == -1 {
 			return
 		}
 
-		headersLine := string(data[endIndex:hLE])
+		headersLine := string(data[rLE:hLE])
 		headers := strings.Split(headersLine, "\r\n")[1:]
-
+		//headers = headers[1:]
 		mp := make(map[string]string)
 		for _, v := range headers {
 			headerLine := strings.Split(v, ": ")
@@ -119,20 +118,23 @@ func (s *Server) handle(conn net.Conn) {
 
 		req.Headers = mp
 
+		// Body
 		b := string(data[hLE:])
 		b = strings.Trim(b, "\r\n")
 
 		req.Body = []byte(b)
 
-		reqLine := string(data[:endIndex])
+		reqLine := string(data[:rLE])
 		parts := strings.Split(reqLine, " ")
 
 		if len(parts) != 3 {
+			log.Println(ErrBadRequest)
 			return
 		}
-
+		//method, path, version := parts[0], parts[1], parts[2]
 		path, version := parts[1], parts[2]
 		if version != "HTTP/1.1" {
+			log.Println(ErrHTTPVersionNotValid)
 			return
 		}
 
