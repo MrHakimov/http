@@ -153,7 +153,7 @@ func (s *Server) handle(conn net.Conn) {
 		var handler = func(req *Request) { conn.Close() }
 
 		s.mu.RLock()
-		pathParameters, hr := s.validate(uri.Path)
+		pathParameters, hr := s.checkPath(uri.Path)
 		if hr != nil {
 			handler = hr
 			req.PathParams = pathParameters
@@ -164,7 +164,7 @@ func (s *Server) handle(conn net.Conn) {
 	}
 }
 
-func (s *Server) validate(path string) (map[string]string, HandlerFunc) {
+func (s *Server) checkPath(path string) (map[string]string, HandlerFunc) {
 	strRoutes := make([]string, len(s.handlers))
 	i := 0
 	for k := range s.handlers {

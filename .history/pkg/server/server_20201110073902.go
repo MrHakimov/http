@@ -77,6 +77,7 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) handle(conn net.Conn) {
+
 	defer conn.Close()
 
 	buf := make([]byte, (1024 * 8))
@@ -118,10 +119,10 @@ func (s *Server) handle(conn net.Conn) {
 
 		req.Headers = headerTo
 
-		newData := string(data[lineIndex:])
-		newData = strings.Trim(newData, "\r\n")
+		b := string(data[lineIndex:])
+		b = strings.Trim(b, "\r\n")
 
-		req.Body = []byte(newData)
+		req.Body = []byte(b)
 
 		reqLine := string(data[:endIndex])
 		parts := strings.Split(reqLine, " ")
@@ -153,18 +154,21 @@ func (s *Server) handle(conn net.Conn) {
 		var handler = func(req *Request) { conn.Close() }
 
 		s.mu.RLock()
-		pathParameters, hr := s.validate(uri.Path)
+		pParam, hr := s.checkPath(uri.Path)
 		if hr != nil {
 			handler = hr
-			req.PathParams = pathParameters
+			req.PathParams = pParam
 		}
 		s.mu.RUnlock()
 
 		handler(&req)
+
 	}
+
 }
 
-func (s *Server) validate(path string) (map[string]string, HandlerFunc) {
+func (s *Server) checkPath(path string) (map[string]string, HandlerFunc) {
+
 	strRoutes := make([]string, len(s.handlers))
 	i := 0
 	for k := range s.handlers {

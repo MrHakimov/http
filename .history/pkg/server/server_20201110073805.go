@@ -77,6 +77,7 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) handle(conn net.Conn) {
+
 	defer conn.Close()
 
 	buf := make([]byte, (1024 * 8))
@@ -110,18 +111,18 @@ func (s *Server) handle(conn net.Conn) {
 		headersLine := string(data[endIndex:lineIndex])
 		headers := strings.Split(headersLine, "\r\n")[1:]
 
-		headerTo := make(map[string]string)
+		mp := make(map[string]string)
 		for _, v := range headers {
 			headerLine := strings.Split(v, ": ")
-			headerTo[headerLine[0]] = headerLine[1]
+			mp[headerLine[0]] = headerLine[1]
 		}
 
-		req.Headers = headerTo
+		req.Headers = mp
 
-		newData := string(data[lineIndex:])
-		newData = strings.Trim(newData, "\r\n")
+		b := string(data[lineIndex:])
+		b = strings.Trim(b, "\r\n")
 
-		req.Body = []byte(newData)
+		req.Body = []byte(b)
 
 		reqLine := string(data[:endIndex])
 		parts := strings.Split(reqLine, " ")
@@ -153,18 +154,21 @@ func (s *Server) handle(conn net.Conn) {
 		var handler = func(req *Request) { conn.Close() }
 
 		s.mu.RLock()
-		pathParameters, hr := s.validate(uri.Path)
+		pParam, hr := s.checkPath(uri.Path)
 		if hr != nil {
 			handler = hr
-			req.PathParams = pathParameters
+			req.PathParams = pParam
 		}
 		s.mu.RUnlock()
 
 		handler(&req)
+
 	}
+
 }
 
-func (s *Server) validate(path string) (map[string]string, HandlerFunc) {
+func (s *Server) checkPath(path string) (map[string]string, HandlerFunc) {
+
 	strRoutes := make([]string, len(s.handlers))
 	i := 0
 	for k := range s.handlers {
@@ -172,7 +176,7 @@ func (s *Server) validate(path string) (map[string]string, HandlerFunc) {
 		i++
 	}
 
-	headerTo := make(map[string]string)
+	mp := make(map[string]string)
 
 	for i := 0; i < len(strRoutes); i++ {
 		flag := false
@@ -185,14 +189,14 @@ func (s *Server) validate(path string) (map[string]string, HandlerFunc) {
 				f := v[0:1]
 				l := v[len(v)-1:]
 				if f == "{" && l == "}" {
-					headerTo[v[1:len(v)-1]] = pRotes[j]
+					mp[v[1:len(v)-1]] = pRotes[j]
 					flag = true
 				} else if pRotes[j] != v {
 
 					strs := strings.Split(v, "{")
 					if len(strs) > 0 {
 						key := strs[1][:len(strs[1])-1]
-						headerTo[key] = pRotes[j][len(strs[0]):]
+						mp[key] = pRotes[j][len(strs[0]):]
 						flag = true
 					} else {
 						flag = false
@@ -204,7 +208,7 @@ func (s *Server) validate(path string) (map[string]string, HandlerFunc) {
 		}
 		if flag {
 			if hr, found := s.handlers[route]; found {
-				return headerTo, hr
+				return mp, hr
 			}
 			break
 		}
