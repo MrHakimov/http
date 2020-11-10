@@ -144,7 +144,14 @@ func (s *Server) handle(conn net.Conn) {
 		var handler = func(req *Request) { conn.Close() }
 
 		s.mu.RLock()
-		handler(&req)
+		pParam, hr := s.checkPath(uri.Path)
+		if hr != nil {
+			handler = hr
+			req.PathParams = pParam
+		}
 		s.mu.RUnlock()
+
+		handler(&req)
+
 	}
 }

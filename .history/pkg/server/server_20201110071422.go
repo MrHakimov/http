@@ -146,5 +146,6 @@ func (s *Server) handle(conn net.Conn) {
 		s.mu.RLock()
 		handler(&req)
 		s.mu.RUnlock()
+
 	}
 }

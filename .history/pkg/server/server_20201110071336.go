@@ -109,8 +109,12 @@ func (s *Server) handle(conn net.Conn) {
 			mp[headerLine[0]] = headerLine[1]
 		}
 
+		req.Headers = mp
+
 		b := string(data[hLE:])
 		b = strings.Trim(b, "\r\n")
+
+		req.Body = []byte(b)
 
 		reqLine := string(data[:rLE])
 		parts := strings.Split(reqLine, " ")
@@ -144,7 +148,14 @@ func (s *Server) handle(conn net.Conn) {
 		var handler = func(req *Request) { conn.Close() }
 
 		s.mu.RLock()
-		handler(&req)
+		pParam, hr := s.checkPath(uri.Path)
+		if hr != nil {
+			handler = hr
+			req.PathParams = pParam
+		}
 		s.mu.RUnlock()
+
+		handler(&req)
+
 	}
 }

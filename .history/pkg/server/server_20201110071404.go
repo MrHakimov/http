@@ -144,7 +144,12 @@ func (s *Server) handle(conn net.Conn) {
 		var handler = func(req *Request) { conn.Close() }
 
 		s.mu.RLock()
-		handler(&req)
+		if hr != nil {
+			handler = hr
+		}
 		s.mu.RUnlock()
+
+		handler(&req)
+
 	}
 }
