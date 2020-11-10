@@ -88,9 +88,6 @@ func (s *Server) handle(conn net.Conn) {
 	data := buf[:n]
 	requestLineDelim := []byte{'\r', '\n'}
 	requestLineEnd := bytes.Index(data, requestLineDelim)
-	if requestLineEnd == -1 {
-		log.Print("requestLineEndErr: ", requestLineEnd)
-	}
 
 	requestLine := string(data[:requestLineEnd])
 	parts := strings.Split(requestLine, " ")

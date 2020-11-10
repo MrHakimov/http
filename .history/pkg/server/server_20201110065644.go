@@ -73,35 +73,54 @@ func (s *Server) Start() error {
 }
 
 func (s *Server) handle(conn net.Conn) {
+	var err error
+
 	defer func() {
-		if closeErr := conn.Close(); closeErr != nil {
-			log.Println(closeErr)
+		if cerr := conn.Close(); cerr != nil {
+			if err == nil {
+				err = cerr
+				log.Print(err)
+			}
+			log.Print(err)
 		}
 	}()
 
 	buf := make([]byte, 4096)
+
 	n, err := conn.Read(buf)
 	if err == io.EOF {
 		log.Printf("%s", buf[:n])
+		log.Print(err)
 	}
+	if err != nil {
+		log.Print(err)
+	}
+	log.Printf("%s", buf[:n])
 
 	data := buf[:n]
-	requestLineDelim := []byte{'\r', '\n'}
-	requestLineEnd := bytes.Index(data, requestLineDelim)
-	if requestLineEnd == -1 {
-		log.Print("requestLineEndErr: ", requestLineEnd)
-	}
+	requestLineDeLim := []byte{'\r', '\n'}
+	requestLineEnd := bytes.Index(data, requestLineDeLim)
 
 	requestLine := string(data[:requestLineEnd])
 	parts := strings.Split(requestLine, " ")
-	if len(parts) != 3 {
-		log.Print("partsErr: ", parts)
+
+	_, path, _ := parts[0], parts[1], parts[2]
+
+	uri, err := url.ParseRequestURI(path)
+
+	if err != nil {
+		log.Print(err)
+		return
 	}
 
+	newRequest := &Request{Conn: conn, QueryParams: uri.Query()}
+
 	s.mu.RLock()
-	if handler, ok := s.handlers[parts[1]]; ok {
-		s.mu.RUnlock()
-		handler(conn)
+	handler, ok := s.handlers[uri.Path]
+	s.mu.RUnlock()
+	if ok == true {
+		handler(newRequest)
+	} else {
+		return
 	}
-	return
 }
