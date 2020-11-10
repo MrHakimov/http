@@ -116,14 +116,10 @@ func (s *Server) handle(conn net.Conn) {
 		return
 	}
 
-	var req Request
-	req.Conn = conn
-	req.QueryParams = uri.Query()
-
 	s.mu.RLock()
 	if handler, ok := s.handlers[parts[1]]; ok {
 		s.mu.RUnlock()
-		handler(&req)
+		handler(conn)
 	}
 	return
 }

@@ -104,26 +104,10 @@ func (s *Server) handle(conn net.Conn) {
 		return
 	}
 
-	decode, err := url.PathUnescape(path)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	uri, err := url.ParseRequestURI(decode)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	var req Request
-	req.Conn = conn
-	req.QueryParams = uri.Query()
-
 	s.mu.RLock()
 	if handler, ok := s.handlers[parts[1]]; ok {
 		s.mu.RUnlock()
-		handler(&req)
+		handler(conn)
 	}
 	return
 }

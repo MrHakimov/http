@@ -123,7 +123,7 @@ func (s *Server) handle(conn net.Conn) {
 	s.mu.RLock()
 	if handler, ok := s.handlers[parts[1]]; ok {
 		s.mu.RUnlock()
-		handler(&req)
+		handler(req)
 	}
 	return
 }

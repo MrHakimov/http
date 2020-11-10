@@ -12,7 +12,7 @@ import (
 )
 
 // HandlerFunc handler
-type HandlerFunc func(req *Request)
+type HandlerFunc func(conn net.Conn)
 
 // Server class
 type Server struct {
@@ -98,32 +98,10 @@ func (s *Server) handle(conn net.Conn) {
 		log.Print("partsErr: ", parts)
 	}
 
-	path, version := parts[1], parts[2]
-	if version != "HTTP/1.1" {
-		log.Println("Wrong HTTP version!")
-		return
-	}
-
-	decode, err := url.PathUnescape(path)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	uri, err := url.ParseRequestURI(decode)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-
-	var req Request
-	req.Conn = conn
-	req.QueryParams = uri.Query()
-
 	s.mu.RLock()
 	if handler, ok := s.handlers[parts[1]]; ok {
 		s.mu.RUnlock()
-		handler(&req)
+		handler(conn)
 	}
 	return
 }
