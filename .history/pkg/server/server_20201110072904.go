@@ -183,11 +183,15 @@ func (s *Server) handle(conn net.Conn) {
 				key, value := header[:index], header[index+2:]
 				req.Headers[key] = value
 			}
+			log.Println("Headers: ", req.Headers)
 		}
 
 		req.Body = body
+		log.Println("Body:", string(body))
 
+		log.Println()
 		var f = func(req *Request) {}
+
 		s.mu.RLock()
 		f, ok = s.handlers[firstPath]
 		s.mu.RUnlock()

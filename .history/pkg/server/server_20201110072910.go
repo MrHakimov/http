@@ -188,6 +188,7 @@ func (s *Server) handle(conn net.Conn) {
 		req.Body = body
 
 		var f = func(req *Request) {}
+
 		s.mu.RLock()
 		f, ok = s.handlers[firstPath]
 		s.mu.RUnlock()

@@ -177,17 +177,21 @@ func (s *Server) handle(conn net.Conn) {
 			for _, header := range header {
 				index := strings.Index(header, ":")
 				if index == -1 {
+					log.Println("index for seperating key and value not found")
 					return
 				}
-
 				key, value := header[:index], header[index+2:]
-				req.Headers[key] = value
+				req.Headers[key] = value // join them
 			}
+			log.Println("Headers: ", req.Headers)
 		}
 
 		req.Body = body
+		log.Println("Body:", string(body))
 
+		log.Println()
 		var f = func(req *Request) {}
+
 		s.mu.RLock()
 		f, ok = s.handlers[firstPath]
 		s.mu.RUnlock()

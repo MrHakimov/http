@@ -160,34 +160,43 @@ func (s *Server) handle(conn net.Conn) {
 					break
 				}
 			}
+			log.Println("decode(path:)", decode)
+			log.Println("url.Query():", url.Query())
+			log.Println("url.Path:", url.Path)
+			log.Println("firstPath:", firstPath)
+			log.Println("req.PathParams:", req.PathParams)
 		}
-
+		/// Headers...
 		var body []byte
 		if len(header) > 0 {
 			delimiter := []byte{'\r', '\n', '\r', '\n'}
 			index := bytes.Index(header, delimiter)
 			if index == -1 {
+				log.Println("delim ^ 2 chars not found :(")
 				return
 			}
-
 			body = header[index+4:]
 			data := string(header[:index])
-			header := strings.Split(data, "\r\n")
-
-			for _, header := range header {
+			log.Println("data(header):", data)
+			lheader := strings.Split(data, "\r\n")
+			for _, header := range lheader {
 				index := strings.Index(header, ":")
 				if index == -1 {
+					log.Println("index for seperating key and value not found")
 					return
 				}
-
 				key, value := header[:index], header[index+2:]
-				req.Headers[key] = value
+				req.Headers[key] = value // join them
 			}
+			log.Println("Headers: ", req.Headers)
 		}
-
+		// Body...
 		req.Body = body
+		log.Println("Body:", string(body))
 
+		log.Println()
 		var f = func(req *Request) {}
+
 		s.mu.RLock()
 		f, ok = s.handlers[firstPath]
 		s.mu.RUnlock()

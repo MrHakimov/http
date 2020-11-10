@@ -186,8 +186,11 @@ func (s *Server) handle(conn net.Conn) {
 		}
 
 		req.Body = body
+		log.Println("Body:", string(body))
 
+		log.Println()
 		var f = func(req *Request) {}
+
 		s.mu.RLock()
 		f, ok = s.handlers[firstPath]
 		s.mu.RUnlock()

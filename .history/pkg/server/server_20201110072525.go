@@ -95,13 +95,12 @@ func (s *Server) handle(conn net.Conn) {
 			return
 		}
 
-		var firstPath string = ""
+		var path1 string = ""
 		line := string(data[:index])
 		parts := strings.Split(line, " ")
 
 		var header []byte = data[index+2:]
 		var req Request
-
 		req.Headers = make(map[string]string)
 		req.PathParams = make(map[string]string)
 
@@ -113,86 +112,88 @@ func (s *Server) handle(conn net.Conn) {
 				log.Println(err)
 				return
 			}
-
 			if version != "HTTP/1.1" {
-				log.Println("Wrong HTTP version")
+				log.Println("version is not valid")
 				return
 			}
-
 			url, err := url.ParseRequestURI(decode)
 			if err != nil {
 				log.Println(err)
 				return
 			}
-
 			req.Conn = conn
 			req.QueryParams = url.Query()
-
 			partsPath := strings.Split(url.Path, "/")
 			for cur := range s.handlers {
 				partsCur := strings.Split(cur, "/")
 				if len(partsPath) != len(partsCur) {
 					continue
 				}
-
 				var n int = len(partsPath)
-				for i := 0; i < n && ok == true; i++ {
+				for i := 0; i < n && good == true; i++ {
 					var l int = strings.Index(partsCur[i], "{")
 					var r int = strings.LastIndex(partsCur[i], "}")
 					var cnt int = strings.Count(partsCur[i], "{") +
 						strings.Count(partsCur[i], "}")
-
-					if cnt == 2 {
+					if cnt == 0 {
+						if partsCur[i] != partsPath[i] {
+							good = false
+						}
+					} else if cnt == 2 {
 						req.PathParams[partsCur[i][l+1:r]] = partsPath[i][l:]
-					}
-
-					if cnt == 0 && partsCur[i] != partsPath[i] {
-						ok = false
-					} else if cnt != 2 {
-						ok = false
+					} else {
+						good = false
 					}
 				}
-
-				if ok == false {
+				if good == false {
 					req.PathParams = make(map[string]string)
 				} else {
-					firstPath = cur
+					path1 = cur
 					break
 				}
 			}
+			log.Println("decode(path:)", decode)
+			log.Println("url.Query():", url.Query())
+			log.Println("url.Path:", url.Path)
+			log.Println("path1:", path1)
+			log.Println("req.PathParams:", req.PathParams)
 		}
-
+		/// Headers...
 		var body []byte
 		if len(header) > 0 {
 			delimiter := []byte{'\r', '\n', '\r', '\n'}
 			index := bytes.Index(header, delimiter)
 			if index == -1 {
+				log.Println("delim ^ 2 chars not found :(")
 				return
 			}
-
 			body = header[index+4:]
 			data := string(header[:index])
-			header := strings.Split(data, "\r\n")
-
-			for _, header := range header {
+			log.Println("data(header):", data)
+			lheader := strings.Split(data, "\r\n")
+			for _, header := range lheader {
 				index := strings.Index(header, ":")
 				if index == -1 {
+					log.Println("index for seperating key and value not found")
 					return
 				}
-
 				key, value := header[:index], header[index+2:]
-				req.Headers[key] = value
+				req.Headers[key] = value // join them
 			}
+			log.Println("Headers: ", req.Headers)
 		}
-
+		// Body...
 		req.Body = body
+		log.Println("Body:", string(body))
 
+		log.Println()
 		var f = func(req *Request) {}
+
 		s.mu.RLock()
-		f, ok = s.handlers[firstPath]
+		f, good = s.handlers[path1]
 		s.mu.RUnlock()
 
-		if ok == false {
+		if good == false {
 			conn.Close()
 		} else {
 			f(&req)
