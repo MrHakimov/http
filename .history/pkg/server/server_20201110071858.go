@@ -111,7 +111,6 @@ func (s *Server) handle(req Request) {
 		if uri.RawQuery != "" {
 			req.QueryParams = uri.Query()
 			log.Println(req.QueryParams["id"])
-			_, err = req.Conn.Write([]byte(s.Response("ID: " + req.QueryParams["id"][0])))
 		} else {
 			split := strings.Split(uri.Path, "/payments/")
 			m := make(map[string]string)

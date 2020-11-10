@@ -3,7 +3,6 @@ package server
 import (
 	"bytes"
 	"io"
-	"strconv"
 	"strings"
 
 	"log"
@@ -116,6 +115,9 @@ func (s *Server) handle(req Request) {
 			split := strings.Split(uri.Path, "/payments/")
 			m := make(map[string]string)
 			m["id"] = split[1]
+			req.PathParams = m
+			log.Println(req.PathParams["id"])
+			_, err = req.Conn.Write([]byte(s.Response("ID: " + req.PathParams["id"])))
 		}
 
 		path = uri.Path
@@ -130,13 +132,4 @@ func (s *Server) handle(req Request) {
 		handler(&req)
 	}
 	return
-}
-
-// Response common answer
-func (s *Server) Response(body string) string {
-	return "HTTP/1.1 200 OK\r\n" +
-		"Content-Length: " + strconv.Itoa(len(body)) + "\r\n" +
-		"Content-Type: text/html\r\n" +
-		"Connection: close\r\n" +
-		"\r\n" + body
 }

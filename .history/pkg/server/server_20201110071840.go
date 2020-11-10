@@ -111,7 +111,6 @@ func (s *Server) handle(req Request) {
 		if uri.RawQuery != "" {
 			req.QueryParams = uri.Query()
 			log.Println(req.QueryParams["id"])
-			_, err = req.Conn.Write([]byte(s.Response("ID: " + req.QueryParams["id"][0])))
 		} else {
 			split := strings.Split(uri.Path, "/payments/")
 			m := make(map[string]string)
@@ -132,7 +131,6 @@ func (s *Server) handle(req Request) {
 	return
 }
 
-// Response common answer
 func (s *Server) Response(body string) string {
 	return "HTTP/1.1 200 OK\r\n" +
 		"Content-Length: " + strconv.Itoa(len(body)) + "\r\n" +
