@@ -21,12 +21,10 @@ func NewServer(mux *http.ServeMux, bannersSvc *banners.Service) *Server {
 	return &Server{mux: mux, bannersSvc: bannersSvc}
 }
 
-// ServeHTTP calls s.mux.ServeHTTP
 func (s *Server) ServeHTTP(writer http.ResponseWriter, request *http.Request) {
 	s.mux.ServeHTTP(writer, request)
 }
 
-// Init initializes all supported operations
 func (s *Server) Init() {
 	log.Println("Init method")
 	s.mux.HandleFunc("/banners.getAll", s.handleGetAllBanners)
