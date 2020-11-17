@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/MrHakimov/pkg/banners"
+	"github.com/MrHakimov/http/pkg/banners"
 )
 
 // Server class for main data
